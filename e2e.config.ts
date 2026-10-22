@@ -18,7 +18,7 @@ export default {
       model: gateway("openai/gpt-6-luna-fast"),
       system: "You are a thorough QA agent. Verify every outcome.",
       context:
-        "Payment happens in Paddle's overlay checkout: an iframe from sandbox-buy.paddle.com that opens over our page, so the URL doesn't change while paying. Its 3D Secure screens may open in a nested iframe. All cards are Paddle sandbox test cards; nothing is charged.",
+        "Payment happens in Paddle's overlay checkout: an iframe from sandbox-buy.paddle.com that covers our page, so the URL doesn't change while paying. Its controls aren't listed as nodes: act on them by points on the screenshot, never on the iframe node itself. Its Return link, an arrow at the top left, closes it. Its 3D Secure test page opens inside it. All cards are Paddle sandbox test cards; nothing is charged.",
     },
   },
   secrets,
