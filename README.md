@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# e2e-paddle
 
-## Getting Started
+A checkout that takes real Paddle payments in a sandbox, used as an example of end-to-end testing a payment page you don't own with [e2e](https://www.npmjs.com/package/e2e).
 
-First, run the development server:
+## How it works
+
+The checkout uses Paddle's overlay checkout, the flow Paddle recommends: Paddle's checkout opens in an iframe over our page, and the shopper pays there.
+
+### Test cards
+
+| Card number           | Result             |
+| --------------------- | ------------------ |
+| `4242 4242 4242 4242` | Paid               |
+| `4000 0000 0000 0002` | Declined           |
+| `4000 0038 0000 0446` | Asks for 3D Secure |
+
+Use any name, any future expiry date, and CVC `100`.
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Paddle keys
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Everything runs in a free Paddle sandbox. Sign up at [sandbox-vendors.paddle.com](https://sandbox-vendors.paddle.com/signup), then copy `.env.example` to `.env.local` and set:
 
-## Learn More
+- `PADDLE_API_KEY`: an API key (`pdl_sdbx_apikey_…`) from **Developer tools → Authentication → API keys**.
+- `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`: a client-side token (`test_…`) from the same page.
 
-To learn more about Next.js, take a look at the following resources:
+Paddle only creates transactions once a default payment link is set: add one under **Checkout → Checkout settings**.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## End-to-end tests
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The agent model goes through the Vercel AI Gateway, so set `AI_GATEWAY_API_KEY` (or link a Vercel project). Then, with the dev server running:
 
-## Deploy on Vercel
+```bash
+npm run test:e2e
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+To test a different URL, set `APP_URL`. Configuration lives in `e2e.config.ts`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+| Command            | Description          |
+| ------------------ | -------------------- |
+| `npm run dev`      | Start the dev server |
+| `npm run build`    | Build for production |
+| `npm run lint`     | Run ESLint           |
+| `npm run format`   | Format with Prettier |
+| `npm run test:e2e` | Run the e2e tests    |
