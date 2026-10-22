@@ -1,6 +1,9 @@
 export type ResultRow = { label: string; value: string; mono?: boolean };
 
-export function ResultPanel({ status, detail, rows = [] }: { status: string; detail: string; rows?: ResultRow[] }) {
+type ResultPanelProps = { status: string; detail: string; rows?: ResultRow[]; pending?: boolean };
+
+// No test id while pending: the fallback and the streamed result can briefly coexist.
+export function ResultPanel({ status, detail, rows = [], pending = false }: ResultPanelProps) {
   return (
     <section
       aria-labelledby="result-heading"
@@ -9,7 +12,7 @@ export function ResultPanel({ status, detail, rows = [] }: { status: string; det
       <h1 id="result-heading" className="type-label-xs text-e2e-text-faint">
         Payment
       </h1>
-      <p data-testid="payment-status" className="type-h3-display text-e2e-text-bright">
+      <p data-testid={pending ? undefined : "payment-status"} className="type-h3-display text-e2e-text-bright">
         {status}
       </p>
       <p className="type-body-s text-e2e-text-soft">{detail}</p>
