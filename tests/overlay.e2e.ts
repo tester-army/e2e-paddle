@@ -119,7 +119,7 @@ describe("overlay checkout", { tags: ["overlay"], skip, retries: 2, timeout: 180
     await app.open("/");
     const transactionId = await openCheckout();
 
-    await agent.assert("the checkout shows e2e Pro at $20.00/month", { vision: true });
+    await agent.waitFor("Paddle's checkout is open over the page and shows e2e Pro at $20.00/month", { vision: true });
 
     await agent.act("leave the checkout with its Return link at the top left");
     await expect(browser.locator(PADDLE_FRAME)).toBeHidden();
