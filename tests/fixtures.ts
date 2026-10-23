@@ -1,4 +1,4 @@
-import { type Browser, test as base } from "@e2e-dev/web";
+import { test as base } from "@e2e-dev/web";
 import { Environment, Paddle } from "@paddle/paddle-node-sdk";
 import { expect, unique } from "e2e";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -15,19 +15,6 @@ export const skip =
       : false;
 
 export const PADDLE_FRAME = 'iframe[name="paddle_frame"]';
-
-// Clicks inside Paddle's checkout are exact; the agent fills in the form and checks what it shows.
-export function paddleCheckout(browser: Browser) {
-  return browser.frameLocator(PADDLE_FRAME);
-}
-
-// Paddle's sandbox runs cards through Stripe, whose 3D Secure test page sits three frames inside Paddle's.
-export function threeDSecurePage(browser: Browser) {
-  return paddleCheckout(browser)
-    .frameLocator('iframe[name="iframe-challenge"]')
-    .frameLocator('iframe[name^="__privateStripeFrame"]')
-    .frameLocator('iframe[name="stripe-challenge-frame"]');
-}
 
 type OpenCheckout = () => Promise<string>;
 
@@ -46,8 +33,6 @@ export const test = withPaddle.extend<{ openCheckout: OpenCheckout }>({
       const { transactionId } = (await (await created).json()) as { transactionId: string };
       transactionIds.push(transactionId);
       await expect(browser.locator(PADDLE_FRAME)).toBeVisible({ timeout: 15_000 });
-      // A native <select> never shows its options in a screenshot, so a locator picks the country.
-      await paddleCheckout(browser).getByLabel("Country").selectOption(COUNTRY);
       return transactionId;
     });
     // Cancel what this test subscribed, even after a failure.
@@ -68,14 +53,10 @@ async function subscriptionOf(paddle: Paddle, transactionId: string): Promise<st
   }
 }
 
-// A fixed country, so Paddle asks for the same fields everywhere.
-export const COUNTRY = "United Kingdom";
-
 // A new email per test: Paddle's sandbox blocks a customer after many failed payments.
 export function shopper() {
   return {
     email: unique(`ada+${Date.now()}@example.com`),
-    postcode: "SW1A 1AA",
     name: "Ada Lovelace",
     expiry: "12/34",
     cvc: "100",

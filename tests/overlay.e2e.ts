@@ -1,22 +1,20 @@
 import { describe } from "@e2e-dev/web";
 import { expect } from "e2e";
 
-import { CARDS, daysUntil, PADDLE_FRAME, paddleCheckout, shopper, skip, test, threeDSecurePage } from "./fixtures";
+import { CARDS, daysUntil, PADDLE_FRAME, shopper, skip, test } from "./fixtures";
 
+// Paddle picks the country from the shopper's location; some countries also ask for a postcode.
 const FILL_CHECKOUT =
-  "fill in the checkout form: email {email}, postcode {postcode}, name on card {name}, card number {number}, expiry {expiry}, and CVV {cvc}";
+  "fill in the checkout form: email {email}, name on card {name}, card number {number}, expiry {expiry}, CVV {cvc}, and, if it asks for one, a postcode valid for the country it shows";
 
 const THREE_D_SECURE =
   "After subscribing, Paddle shows a test 3D Secure page inside its checkout, with Fail and Complete buttons. It can take a few seconds to load.";
-
-const SUBSCRIBE_NOW = /^Subscribe now$/;
 
 // Paddle's checkout isn't built for automation, so these tests retry.
 describe("overlay checkout", { tags: ["overlay"], skip, retries: 2, timeout: 180_000 }, () => {
   test("a valid card subscribes at $20.00 a month and Paddle records it", async ({
     app,
     agent,
-    browser,
     screen,
     paddle,
     openCheckout,
@@ -27,7 +25,7 @@ describe("overlay checkout", { tags: ["overlay"], skip, retries: 2, timeout: 180
     await agent.act(FILL_CHECKOUT, { params: { ...shopper(), number: CARDS.visa } });
     await agent.assert("the card number field shows 4242 4242 4242 4242 and $20.00 is due today", { vision: true });
 
-    await paddleCheckout(browser).getByRole("button", SUBSCRIBE_NOW).click();
+    await agent.act("click the Subscribe now button");
     await expect(screen.getByTestId("payment-status")).toHaveText("Subscribed", { timeout: 30_000 });
 
     const transaction = await paddle.transactions.get(transactionId);
@@ -55,7 +53,7 @@ describe("overlay checkout", { tags: ["overlay"], skip, retries: 2, timeout: 180
       await agent.act(FILL_CHECKOUT, { params: { ...shopper(), number: CARDS.declined } });
       await agent.assert("the card number field shows 4000 0000 0000 0002", { vision: true });
 
-      await paddleCheckout(browser).getByRole("button", SUBSCRIBE_NOW).click();
+      await agent.act("click the Subscribe now button");
       await agent.waitFor("the checkout says the payment was declined", { vision: true });
       await expect(browser).toHaveURL("/");
 
@@ -68,19 +66,17 @@ describe("overlay checkout", { tags: ["overlay"], skip, retries: 2, timeout: 180
   test(
     "3D Secure: completing the challenge subscribes",
     { agentContext: THREE_D_SECURE },
-    async ({ app, agent, browser, screen, paddle, openCheckout }) => {
+    async ({ app, agent, screen, paddle, openCheckout }) => {
       await app.open("/");
       const transactionId = await openCheckout();
 
       await agent.act(FILL_CHECKOUT, { params: { ...shopper(), number: CARDS.threeDSecure } });
       await agent.assert("the card number field shows 4000 0038 0000 0446", { vision: true });
 
-      await paddleCheckout(browser).getByRole("button", SUBSCRIBE_NOW).click();
+      await agent.act("click the Subscribe now button");
       await agent.waitFor("a 3D Secure test page with Fail and Complete buttons is showing", { vision: true });
 
-      await threeDSecurePage(browser)
-        .getByRole("button", /^complete$/i)
-        .click();
+      await agent.act("click Complete on the 3D Secure test page");
       await expect(screen.getByTestId("payment-status")).toHaveText("Subscribed", { timeout: 30_000 });
 
       const transaction = await paddle.transactions.get(transactionId);
@@ -99,12 +95,10 @@ describe("overlay checkout", { tags: ["overlay"], skip, retries: 2, timeout: 180
       await agent.act(FILL_CHECKOUT, { params: { ...shopper(), number: CARDS.threeDSecure } });
       await agent.assert("the card number field shows 4000 0038 0000 0446", { vision: true });
 
-      await paddleCheckout(browser).getByRole("button", SUBSCRIBE_NOW).click();
+      await agent.act("click the Subscribe now button");
       await agent.waitFor("a 3D Secure test page with Fail and Complete buttons is showing", { vision: true });
 
-      await threeDSecurePage(browser)
-        .getByRole("button", /^fail$/i)
-        .click();
+      await agent.act("click Fail on the 3D Secure test page");
       await agent.waitFor("the checkout shows an error saying the payment didn't go through", { vision: true });
       await expect(browser).toHaveURL("/");
 
@@ -127,9 +121,7 @@ describe("overlay checkout", { tags: ["overlay"], skip, retries: 2, timeout: 180
 
     await agent.assert("the checkout shows e2e Pro at $20.00/month", { vision: true });
 
-    await paddleCheckout(browser)
-      .getByRole("button", /^Return to/)
-      .click();
+    await agent.act("leave the checkout with its Return link at the top left");
     await expect(browser.locator(PADDLE_FRAME)).toBeHidden();
     await expect(screen.getByTestId("checkout-notice")).toHaveText("Checkout closed. Nothing was charged.");
     expect((await paddle.transactions.get(transactionId)).status).toBe("draft");
